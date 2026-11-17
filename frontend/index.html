@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Demo API | Registro de episodios</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="app.js" defer></script>
+</head>
+<body>
+<div class="layout">
+  <header>
+    <div><p class="eyebrow">Proyecto integrador · Administración de bases de datos</p>
+      <h1>Registro de episodios epilépticos</h1>
+      <p class="subhead">Demostración del modelo relacional PostgreSQL y la API FastAPI.</p>
+    </div>
+    <span class="tag">Solo datos ficticios · Sin uso clínico</span>
+  </header>
+  <div id="mensaje" class="message" role="status" aria-live="polite"></div>
+  <main>
+    <section class="panel">
+      <div class="panel-title"><span class="step">1</span><h2>Pacientes</h2></div>
+      <label>Paciente para consultar
+        <select id="paciente-seleccionado"><option value="">Cargando pacientes...</option></select>
+      </label>
+      <div class="actions compact">
+        <button type="button" class="secondary" id="editar-paciente">Editar seleccionado</button>
+        <button type="button" class="danger" id="borrar-paciente">Eliminar seleccionado</button>
+      </div>
+      <form id="form-paciente">
+        <h3 id="titulo-form-paciente">Crear paciente</h3>
+        <label>Nombre ficticio <input required minlength="2" maxlength="150" id="nombre" placeholder="Paciente de prueba" /></label>
+        <div class="cols">
+          <label>Fecha de nacimiento <input id="fecha_nacimiento" type="date" /></label>
+          <label>Sexo (opcional)
+            <select id="sexo"><option value="">No especificado</option><option>Femenino</option><option>Masculino</option><option>Otro</option><option>Prefiero no indicar</option></select>
+          </label>
+        </div>
+        <label>Teléfono ficticio (opcional) <input id="telefono" maxlength="25" placeholder="Solo para pruebas" /></label>
+        <div class="actions"><button id="guardar-paciente" type="submit">Guardar paciente</button>
+          <button class="secondary hidden" id="cancelar-paciente" type="button">Cancelar edición</button></div>
+      </form>
+    </section>
+
+    <section class="panel" id="panel-episodio">
+      <div class="panel-title"><span class="step">2</span><h2>Registrar episodio</h2></div>
+      <p class="hint">Se guarda el episodio y sus factores en una sola transacción.</p>
+      <form id="form-episodio">
+        <div class="cols">
+          <label>Fecha y hora <input id="fecha_hora" type="datetime-local" required /></label>
+          <label>Duración (segundos) <input id="duracion" type="number" min="1" max="86400" value="75" required /></label>
+        </div>
+        <div class="cols">
+          <label>Tipo de crisis <select id="tipo_crisis" required><option>Focal</option><option>Generalizada</option><option>No determinado</option></select></label>
+          <label>Severidad (escala ilustrativa 1–5)
+            <select id="severidad"><option value="">Sin especificar</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+          </label>
+        </div>
+        <label class="check"><input id="perdida_conocimiento" type="checkbox" /> Pérdida de conocimiento reportada</label>
+        <fieldset><legend>Posibles factores reportados (selección múltiple)</legend>
+          <div class="checks-grid" id="lista-desencadenantes"><span class="hint">Cargando catálogo...</span></div>
+        </fieldset>
+        <label>Observaciones <textarea id="observaciones" maxlength="2000" rows="2" placeholder="Descripción libre del evento..."></textarea></label>
+        <div class="actions"><button id="guardar-episodio" type="submit">Guardar episodio</button>
+          <button class="secondary hidden" id="cancelar-episodio" type="button">Cancelar edición</button></div>
+      </form>
+    </section>
+
+    <section class="panel wide">
+      <div class="panel-title"><span class="step">3</span><h2>Historial de episodios</h2><button class="secondary push-right" type="button" id="recargar">Actualizar</button></div>
+      <div class="cols filters">
+        <label>Desde <input type="date" id="desde" /></label>
+        <label>Hasta <input type="date" id="hasta" /></label>
+      </div>
+      <div class="actions compact"><button type="button" class="secondary" id="filtrar">Filtrar</button><button class="secondary" id="limpiar-filtros" type="button">Quitar filtros</button></div>
+      <div class="table-scroll"><table><thead><tr>
+        <th>ID</th><th>Fecha</th><th>Tipo</th><th>Duración</th><th>Factores</th><th>Observaciones</th><th>Acciones</th>
+      </tr></thead><tbody id="historial"><tr><td colspan="7">Selecciona un paciente.</td></tr></tbody></table></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title"><span class="step">4</span><h2>Resumen clínico</h2></div>
+      <p class="hint">Resultados de la vista <code>v_resumen_paciente</code>.</p>
+      <div class="stats" id="resumen"><span class="hint">Selecciona un paciente.</span></div>
+    </section>
+    <section class="panel">
+      <div class="panel-title"><span class="step">5</span><h2>Patrones de factores</h2></div>
+      <p class="hint">Porcentaje sobre el total de episodios; varios factores pueden coincidir.</p>
+      <div id="patrones"><span class="hint">Selecciona un paciente.</span></div>
+    </section>
+    <section class="panel wide">
+      <div class="panel-title"><span class="step">6</span><h2>Tratamientos (datos ficticios)</h2></div>
+      <p class="hint">El historial farmacológico solo se muestra como relación entre tablas; no genera recomendaciones de tratamiento ni dosis.</p>
+      <form id="form-tratamiento" class="treatment-form">
+        <label>Medicamento <select id="medicamento" required><option value="">Selecciona del catálogo</option></select></label>
+        <label>Dosis (texto de demostración) <input id="dosis" maxlength="100" required placeholder="Ejemplo ficticio" /></label>
+        <label>Frecuencia (texto de demostración) <input id="frecuencia" maxlength="100" required placeholder="Registro de muestra" /></label>
+        <label>Fecha inicio <input type="date" id="inicio-tratamiento" required /></label>
+        <label>Fecha fin (opcional) <input type="date" id="fin-tratamiento" /></label>
+        <button type="submit">Agregar tratamiento</button>
+      </form>
+      <div class="table-scroll"><table><thead><tr><th>ID</th><th>Medicamento</th><th>Dosis</th><th>Frecuencia</th><th>Inicio</th><th>Fin</th></tr></thead>
+        <tbody id="tratamientos"><tr><td colspan="6">Selecciona un paciente.</td></tr></tbody></table></div>
+    </section>
+  </main>
+  <footer>Prototipo académico. No se utilizará con información real de pacientes ni sustituye una evaluación médica.</footer>
+</div>
+</body>
+</html>
